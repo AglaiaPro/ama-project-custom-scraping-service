@@ -1,4 +1,4 @@
-# A class for detailed data collection about a company
+import asyncio
 import random
 import time
 from scraping.base_scraper import BaseScraper
@@ -14,14 +14,16 @@ class CompanyScraper(BaseScraper):
         - Handle table-like fields.
         - Return structured dictionary with company details.
     """
-    def __init__(self, template):
+    def __init__(self, template, max_concurrency: int = 3):
         """
         Initialize the company scraper with a field template.
 
         Args:
             template (dict): Template describing which fields to scrape.
+            max_concurrency (int): Maximum number of browser sessions to run at once.
         """
         self.template = template
+        self.max_concurrency = max(1, max_concurrency)
 
     def scrape_company(self, company_url):
         """
@@ -56,9 +58,9 @@ class CompanyScraper(BaseScraper):
             if driver:
                 driver.quit()
 
-    def scrape_companies(self, links):
+    async def scrape_companies(self, links):
         """
-        Scrape multiple companies sequentially.
+        Scrape multiple companies concurrently with a small browser pool.
 
         Args:
             links (list[str]): List of company URLs.
@@ -66,13 +68,15 @@ class CompanyScraper(BaseScraper):
         Returns:
             list[dict]: List of parsed company details.
         """
-        results = []
-        for url in links:
-            if url:
-                details = self.scrape_company(url)
-                if details:
-                    results.append(details)
-        return results
+        semaphore = asyncio.Semaphore(self.max_concurrency)
+
+        async def scrape_with_limit(url):
+            async with semaphore:
+                return await asyncio.to_thread(self.scrape_company, url)
+
+        tasks = [scrape_with_limit(url) for url in links if url]
+        scraped_companies = await asyncio.gather(*tasks)
+        return [details for details in scraped_companies if details]
 
     def parse_fields(self, driver, fields):
         """

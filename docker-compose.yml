@@ -1,0 +1,24 @@
+services:
+  custom-scraping:
+    build: .
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: ${MONGO_URI:-mongodb://mongo:27017}
+      SCRAPING_SERVICE_URL: ${SCRAPING_SERVICE_URL:-http://scraping-service:8001}
+      TEST_COMPANY_LIMIT: ${TEST_COMPANY_LIMIT:-3}
+      COMPANY_SCRAPE_CONCURRENCY: ${COMPANY_SCRAPE_CONCURRENCY:-3}
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

@@ -18,14 +18,26 @@ class SeleniumFetcher:
         fetcher = SeleniumFetcher()
         cleaned_html = fetcher.get_html("https://example.com", limit=True)
     """
-    def __init__(self):
-        self.driver = setup_stealth_driver()
+    def __init__(self, driver_factory=setup_stealth_driver):
+        self._driver_factory = driver_factory
+        self.driver = None
+
+    def _get_driver(self):
+        if self.driver is None:
+            self.driver = self._driver_factory()
+        return self.driver
 
     def get_html(self, url: str, limit: bool):
-        self.driver.get(url)
+        driver = self._get_driver()
+        driver.get(url)
         time.sleep(2)
-        cleaned_html = self.clean_html_generic(self.driver.page_source, limit)
+        cleaned_html = self.clean_html_generic(driver.page_source, limit)
         return cleaned_html
+
+    def close(self):
+        if self.driver:
+            self.driver.quit()
+            self.driver = None
 
     def clean_html_generic(self, html: str, limit: bool, max_length: int = 30000) -> str:
         soup = BeautifulSoup(html, 'html.parser')

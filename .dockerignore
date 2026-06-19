@@ -1,5 +1,6 @@
 __pycache__/
-*.pyc
+.pytest_cache/
+*.py[cod]
 *.pyo
 *.pyd
 *.log
@@ -9,9 +10,12 @@ __pycache__/
 .venv/
 venv/
 .dist/
+dist/
 build/
 .git/
 .gitignore
 .idea/
 .vscode/
 node_modules/
+custom-scraping.zip
+tests/__pycache__/

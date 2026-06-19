@@ -1,9 +1,11 @@
 # Python
 __pycache__/
+.pytest_cache/
 *.py[cod]
 *.pyo
 *.pyd
 *.env
+.venv/
 venv/
 *.sqlite3
 *.log
@@ -19,3 +21,4 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+custom-scraping.zip

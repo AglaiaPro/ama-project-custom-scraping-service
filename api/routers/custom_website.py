@@ -1,4 +1,5 @@
 from fastapi import HTTPException, APIRouter
+from openai import OpenAIError, RateLimitError
 from pymongo.errors import PyMongoError
 
 from app.exceptions import SectorNotFound, TemplateNotFound, ScrapingServiceError
@@ -32,8 +33,11 @@ async def create_custom_website_test(data: CustomWebsiteRequest):
     try:
         gpt_client = GPTClient(GPT_KEY)
         selenium_fetcher = SeleniumFetcher()
-        custom_scraper = CustomScraperService(gpt_client, selenium_fetcher)
-        sector_id, test_data = await custom_scraper.process_sector(data.url, data.user_id)
+        try:
+            custom_scraper = CustomScraperService(gpt_client, selenium_fetcher)
+            sector_id, test_data = await custom_scraper.process_sector(data.url, data.user_id)
+        finally:
+            selenium_fetcher.close()
 
         return {
             "sector_id": sector_id,
@@ -47,6 +51,10 @@ async def create_custom_website_test(data: CustomWebsiteRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except PyMongoError as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
+    except RateLimitError as e:
+        raise HTTPException(status_code=429, detail=f"OpenAI quota or rate limit error: {e}")
+    except OpenAIError as e:
+        raise HTTPException(status_code=502, detail=f"OpenAI API error: {e}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
